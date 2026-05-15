@@ -3,547 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TehnoPark Remote Control</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Технопарк</title>
     <style>
         :root {
-            --accent: #FF9F0A; /* Оранжевый */
-            --bg: #000000;
-            --card: rgba(255, 255, 255, 0.08);
-            --glass: blur(25px);
-            --hazard-orange: #FF9F0A;
-            --hazard-black: #000000;
+            --primary-orange: #ff8c00;
+            --bg-dark: #0a0a0a;
+            --text-white: #ffffff;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-
-        body {
-            background: var(--bg); color: white; margin: 0; padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden; touch-action: none; height: 100vh; width: 100vw;
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            height: 100%;
         }
 
-        /* Системные и вспомогательные */
-        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; position: absolute; }
-        .screen.active { display: flex; }
-
-        /* ОТСТУП ОТ СИСТЕМНЫХ КНОПОК ТГ (Увеличил до 85px) */
-        .safe-top-spacer {
-            height: 85px; /* Жесткий отступ сверху, чтобы уйти из мертвой зоны */
-            width: 100%;
-            flex-shrink: 0;
+        /* Шапка профиля */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        /* CSS-анимация Hazard Stripes */
-        @keyframes hazardSlide {
-            0% { background-position: 0 0; }
-            100% { background-position: 100px 100px; }
-        }
-
-        /* Класс для строительного стиля (Hazard Stripes) */
-        .hazard-striped {
-            background-image: linear-gradient(
-                45deg, 
-                var(--hazard-black) 25%, 
-                var(--hazard-orange) 25%, 
-                var(--hazard-orange) 50%, 
-                var(--hazard-black) 50%, 
-                var(--hazard-black) 75%, 
-                var(--hazard-orange) 75%, 
-                var(--hazard-orange) 100%
-            );
-            background-size: 50px 50px; /* Размер полос */
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 15px rgba(255, 159, 10, 0.4);
-            animation: hazardSlide 5s linear infinite; /* Медленное движение полос */
-            transition: transform 0.1s;
-        }
-        .hazard-striped:active { transform: scale(0.98); }
-
-        /* ==================== ГЛАВНАЯ ==================== */
-        .main-header {
-            padding: 0 20px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .user-block { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .avatar { width: 38px; height: 38px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; font-size: 18px;}
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 35px; height: 35px; background: var(--primary-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         
-        .balance-block { 
-            background: var(--card); padding: 5px 5px 5px 15px; border-radius: 14px; 
-            display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .deposit-btn { 
-            background: var(--accent); color: black; border: none; width: 28px; height: 28px; 
-            border-radius: 10px; font-weight: bold; font-size: 20px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* Главная кнопка ИГРАТЬ (Строительный стиль) */
-        .hero-card {
-            margin: 20px; padding: 55px 20px; border-radius: 28px;
-            text-align: center; color: white; position: relative; overflow: hidden;
-        }
-        
-        /* Глянец поверх Hazard stripes */
-        .hero-card::after {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(35deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 40%);
-            transform: rotate(-10deg); pointer-events: none;
-        }
-
-        .hero-card h1 { margin: 0; font-size: 38px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.8);}
-        .hero-card p { opacity: 0.8; margin: 10px 0 0; font-size: 14px;}
-
-        /* СЕТКА (Grid) с новыми иконками под ИГРАТЬ */
-        .home-menu-grid {
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 2 колонки */
-            gap: 15px;
-            margin-top: 5px;
-        }
-
-        /* Плитки меню */
-        .menu-tile {
-            background: var(--card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 22px;
-            padding: 20px;
-            display: flex; flex-direction: column; justify-content: space-between;
+        .balance-btn {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
             cursor: pointer;
-            transition: transform 0.1s, border-color 0.2s;
-        }
-        .menu-tile:active { transform: scale(0.97); }
-        
-        /* Плитка ОНЛАЙН ТРАНСЛЯЦИЯ (На всю ширину) */
-        .menu-tile-full {
-            grid-column: span 2; /* На 2 колонки */
-            height: 120px;
-            background-color: #0c0c0d; /* чуть темнее карточки */
-            position: relative;
-        }
-        
-        /* Элементы иконок ( Hazard Tape ) */
-        .tile-icon-decor {
-            width: 100%; height: 6px;
-            background-image: linear-gradient(45deg, var(--hazard-black) 25%, var(--hazard-orange) 25%, var(--hazard-orange) 50%, var(--hazard-black) 50%, var(--hazard-black) 75%, var(--hazard-orange) 75%, var(--hazard-orange) 100%);
-            background-size: 20px 20px;
-            position: absolute; bottom: 15px; left: 0;
-            opacity: 0.5;
+            border: 1px solid rgba(255, 140, 0, 0.3);
         }
 
-        .tile-title { font-size: 16px; font-weight: bold; margin-top: 5px;}
-        .tile-sub { font-size: 11px; opacity: 0.6; }
-
-        /* Маленькие плитки ЧАТ и МАГАЗИН */
-        .menu-tile-small { height: 100px; padding: 15px; }
-        
-        /* Иконки в маленьких плитках */
-        .tile-emoji { font-size: 28px; margin-bottom: auto; }
-
-        /* ==================== ГАРАЖ ==================== */
-        .garage-container { padding: 0 20px; }
-        .garage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        
-        .vehicle-card {
-            background: var(--card); border-radius: 20px; padding: 12px;
-            border: 1px solid rgba(255,255,255,0.05); position: relative; cursor: pointer;
+        /* Главная кнопка Играть */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 150px);
+            text-align: center;
         }
-        .vehicle-img { height: 60px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; }
-        .v-name { font-size: 14px; font-weight: 600; display: block; margin-bottom: 4px; }
-        
-        .status-tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: bold; }
-        .status-free { background: rgba(48, 209, 88, 0.2); color: #30D158; }
-        .status-busy { background: rgba(255, 69, 58, 0.2); color: #FF453A; }
 
-        /* ==================== ИГРА ==================== */
-        #screen-game { background: #000; overflow: hidden; }
-
-        /* НОВЫЙ ИГРОВОЙ HUD (ОДНА ЛИНИЯ ПО ЦЕНТРУ) */
-        .game-hud {
-            position: absolute; top: 20px;
-            left: 50%; transform: translateX(-50%);
-            width: auto;
-            display: flex; align-items: center; justify-content: center;
-            gap: 15px; /* отступ между кнопками и таймером */
-            z-index: 100;
+        .play-btn {
+            background: linear-gradient(45deg, #ff8c00, #ff4500);
+            width: 90%;
+            max-width: 400px;
+            padding: 40px 20px;
+            border-radius: 25px;
+            font-size: 32px;
+            font-weight: 800;
+            text-transform: uppercase;
+            border: none;
+            color: white;
+            box-shadow: 0 10px 25px rgba(255, 70, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        
-        .timer-display { font-family: 'Courier New', Courier, monospace; font-size: 26px; color: var(--accent); font-weight: 800; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
-        
-        /* Игровые кнопки (SOS и CAM) */
-        .hud-btn {
-            background: var(--card); border: 1px solid rgba(255,255,255,0.1); 
-            color: white; padding: 6px 12px; border-radius: 8px; 
-            font-weight: 700; font-size: 12px; backdrop-filter: var(--glass);
-            display: flex; align-items: center; gap: 5px; cursor: pointer;
-        }
-        .hud-btn.sos { background: #FF3B30; color: white; border: none; box-shadow: 0 0 10px rgba(255,59,48,0.5); }
-        .hud-btn-active { border-color: var(--accent); color: var(--accent); }
 
-        /* Слой для видео */
-        .video-feed-placeholder {
-            width: 100%; height: 100%; background: #080809; 
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0.3;
+        /* Улучшенная видимость текста под кнопкой */
+        .play-subtext {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #ffffff;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); /* Тень для четкости */
+            opacity: 1 !important;
+        }
+
+        /* Полноэкранная трансляция в ландшафте */
+        #stream-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: none;
+            z-index: 1000;
+        }
+
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Растягиваем на весь экран */
+        }
+
+        /* Скрытие лишних элементов в горизонтальном режиме */
+        @media (orientation: landscape) {
+            .header, .footer, .play-subtext {
+                display: none !important;
+            }
+            .main-container { padding: 0; height: 100vh; }
+            #stream-container { display: block; }
+            
+            /* Убираем "шапку" при повороте */
+            body { padding-top: 0 !important; }
         }
 
         /* Джойстики */
-        .joy-wrapper {
-            position: absolute; bottom: 40px;
-            width: 130px; height: 130px; border-radius: 50%;
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(5px); touch-action: none;
-        }
-        .joy-stick {
-            position: absolute; top: 50%; left: 50%;
-            width: 60px; height: 60px; margin: -30px 0 0 -30px;
-            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4);
-            border-radius: 50%; pointer-events: none;
-        }
-        #joy-left { left: 40px; }
-        #joy-right { right: 40px; }
-
-        /* ==================== BOTTOM SHEETS (МОДАЛКИ) ==================== */
-        .sheet {
-            position: fixed; bottom: -100%; left: 0; width: 100%;
-            background: #111112; border-radius: 25px 25px 0 0;
-            padding: 25px 20px calc(20px + var(--tg-safe-area-inset-bottom));
-            transition: 0.3s ease-out; z-index: 200; border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .sheet.open { bottom: 0; }
-        
-        .sheet-back-btn { background: none; border: none; color: #666; font-size: 16px; margin-bottom: 15px;}
-
-        /* Плитки тарифа времени */
-        .time-tariff-card {
-            background: var(--card); padding: 18px; border-radius: 18px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
-        }
-        .time-tariff-card:active { background: rgba(255,255,255,0.1); }
-        .tariff-title { font-weight: bold; font-size: 16px;}
-        .tariff-price { color: var(--accent); font-weight: 800; font-size: 18px;}
-
-        /* ==================== ПРОФИЛЬ (НОВЫЙ) ==================== */
-        .profile-container { display: flex; flex-direction: column; align-items: center; }
-        .profile-stat-grid {
+        .controls {
+            position: absolute;
+            bottom: 30px;
             width: 100%;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 50px;
+            box-sizing: border-box;
+            pointer-events: none;
         }
-        .stat-card {
-            background: rgba(255,255,255,0.04); border-radius: 14px; padding: 15px; text-align: center;
-        }
-        .stat-val { font-size: 22px; font-weight: 800; color: var(--accent); }
-        .stat-lbl { font-size: 11px; opacity: 0.6; margin-top: 4px; text-transform: uppercase;}
 
+        .joystick {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            pointer-events: auto;
+        }
+
+        /* Футер */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="screen-main" class="screen active">
-        <div class="safe-top-spacer"></div> <div class="main-header">
-            <div class="user-block" onclick="openSheet('sheet-profile')">
-                <div class="avatar" id="u-avatar">?</div>
-                <div style="font-weight: 600;" id="u-name">Загрузка...</div>
+    <div id="ui-layer">
+        <div class="header">
+            <div class="user-info">
+                <div class="avatar">А</div>
+                <div class="user-name">Алексей</div>
             </div>
-            <div class="balance-block">
-                <span style="font-weight: bold;"><span id="u-balance">500</span> ₽</span>
-                <button class="deposit-btn" onclick="openSheet('sheet-shop')">+</button>
+            <div class="balance-btn">
+                <span id="balance-value">500</span> монет
+                <span style="color: var(--primary-orange); font-weight: bold; margin-left: 5px;">+</span>
             </div>
         </div>
 
-        <div class="hero-card hazard-striped" onclick="goToGarage()">
-            <h1>ИГРАТЬ</h1>
-            <p>Начни онлайн-заезд прямо сейчас</p>
-        </div>
-        
-        <div class="home-menu-grid">
-            
-            <div class="menu-tile menu-tile-full" onclick="openSheet('sheet-stream')">
-                <div>
-                    <span class="tile-sub">Прямой эфир</span>
-                    <div class="tile-title">ОНЛАЙН ТРАНСЛЯЦИЯ</div>
-                </div>
-                <div style="display:flex; justify-content: space-between; align-items: center;">
-                    <div style="font-size: 12px; color:#666">👀 12 зрителей</div>
-                    <div style="width:10px; height:10px; background:#4CAF50; border-radius:50%; box-shadow:0 0 5px #4CAF50"></div>
-                </div>
-                <div class="tile-icon-decor"></div>
-            </div>
-
-            <div class="menu-tile menu-tile-small" onclick="openSheet('sheet-chat')">
-                <div class="tile-emoji">💬</div>
-                <div class="tile-title">ОБЩИЙ ЧАТ</div>
-                <span class="tile-sub">Общайся с пилотами</span>
-            </div>
-
-            <div class="menu-tile menu-tile-small" onclick="openSheet('sheet-shop')">
-                <div class="tile-emoji">🛒</div>
-                <div class="tile-title">МАГАЗИН</div>
-                <span class="tile-sub">Пакеты монет</span>
-            </div>
-
+        <div class="main-container">
+            <button class="play-btn" onclick="startGame()">ИГРАТЬ</button>
+            <div class="play-subtext">Начни онлайн-заезд прямо сейчас</div>
         </div>
 
-        <div style="text-align: center; margin-top: auto; padding-bottom: 20px; opacity: 0.2; font-size: 11px;">
-            TEHNOPARK CONTROL v1.5 [графическая подготовка]
+        <div class="footer">
+            Технопарк версия 1
         </div>
     </div>
 
-    <div id="screen-garage" class="screen">
-        <div class="safe-top-spacer"></div>
-        
-        <div class="garage-container">
-            <h2 style="margin: 0 0 5px; font-size: 26px; font-weight: 800;">Гараж техники</h2>
-            <p style="color: #888; margin: 0 0 20px; font-size: 14px;">Выбери доступную технику</p>
-            
-            <div class="garage-grid">
-                <div class="vehicle-card" onclick="selectVehicle('ПОГРУЗЧИК', 'free')">
-                    <div class="vehicle-img"></div>
-                    <span class="v-name">ПОГРУЗЧИК</span>
-                    <span class="status-tag status-free">Свободен</span>
-                </div>
-                <div class="vehicle-card" style="opacity: 0.6;" onclick="tg.showConfirm('САМОСВАЛ сейчас занят другим игроком. Уведомить, когда освободится?')">
-                    <div class="vehicle-img"></div>
-                    <span class="v-name">САМОСВАЛ</span>
-                    <span class="status-tag status-busy">Занят (3 мин)</span>
-                </div>
-            </div>
+    <div id="stream-container">
+        <video id="video-feed" autoplay playsinline muted></video>
+        <div class="controls">
+            <div class="joystick" id="left-joy"></div>
+            <div class="joystick" id="right-joy"></div>
         </div>
-    </div>
-
-    <div id="screen-game" class="screen">
-        
-        <div class="game-hud">
-            <button class="hud-btn sos" onclick="exitGame()">SOS 🆘</button>
-            <div class="timer-display" id="timer">10:00</div>
-            <button class="hud-btn hud-btn-active" onclick="tg.showAlert('Верхняя камера активна')">CAM 📹</button>
-        </div>
-
-        <div class="video-feed-placeholder">
-            <div>📹 [ВИДЕОПОТОК ВРЕМЕННО НЕДОСТУПЕН]</div>
-        </div>
-
-        <div id="joy-left" class="joy-wrapper">
-            <div class="joy-stick" id="stick-left"></div>
-        </div>
-        <div id="joy-right" class="joy-wrapper">
-            <div class="joy-stick" id="stick-right"></div>
-        </div>
-    </div>
-
-    <div id="sheet-time" class="sheet">
-        <button class="sheet-back-btn" onclick="closeSheet()">✕ Назад в Гараж</button>
-        <h2 id="sheet-time-title" style="margin: 0 0 20px;">Аренда техники</h2>
-        
-        <div class="time-tariff-card" onclick="startSession(10, 100)">
-            <span class="tariff-title">10 минут заезда</span> <b><span class="tariff-price">100 ₽</span></b>
-        </div>
-        <div class="time-tariff-card" onclick="startSession(15, 140)">
-            <span class="tariff-title">15 минут заезда</span> <b><span class="tariff-price">140 ₽</span></b>
-        </div>
-        <div class="time-tariff-card" onclick="startSession(30, 250)">
-            <span class="tariff-title">30 минут заезда</span> <b><span class="tariff-price">250 ₽</span></b>
-        </div>
-        <button onclick="closeSheet()" style="width:100%; background:none; border:none; color:#666; margin-top:15px;">ОТМЕНИТЬ</button>
-    </div>
-
-    <div id="sheet-profile" class="sheet">
-        <button class="sheet-back-btn" onclick="closeSheet()">✕ Закрыть</button>
-        <div class="profile-container">
-            <div class="avatar" style="width:70px; height:70px; font-size:32px" id="p-avatar">?</div>
-            <h2 id="p-name" style="margin: 15px 0 5px;">Юзер</h2>
-            <p style="color:#666; margin:0; font-size:12px">id: <span id="p-id">?</span></p>
-            
-            <div class="profile-stat-grid">
-                <div class="stat-card"> <div class="stat-val">12</div> <div class="stat-lbl">Заездов</div> </div>
-                <div class="stat-card"> <div class="stat-val">3 ч.</div> <div class="stat-lbl">Время игры</div> </div>
-                <div class="stat-card"> <div class="stat-val">S1</div> <div class="stat-lbl">Рейтинг</div> </div>
-                <div class="stat-card"> <div class="stat-val">25 лет</div> <div class="stat-lbl">Возраст [edit]</div> </div>
-            </div>
-            
-            <button class="tariff-price hazard-striped" style="width:100%; padding:15px; border-radius:12px; margin-top:20px; font-weight:bold; font-size:16px; border:none; text-shadow:0 1px 2px rgba(0,0,0,0.8)" onclick="tg.showAlert('Функция редактирования профиля пока не активна')">РЕДАКТИРОВАТЬ</button>
-        </div>
-    </div>
-
-    <div id="sheet-chat" class="sheet" style="height:80vh">
-        <button class="sheet-back-btn" onclick="closeSheet()">✕ Выйти из чата</button>
-        <h2>ОБЩИЙ ЧАТ</h2>
-        <div style="flex:1; background:rgba(0,0,0,0.3); border-radius:12px; padding:15px; font-family: monospace; font-size:12px; color:#555">
-            [12:05] Admin: Добро пожаловать! История чата будет сохраняться...<br>
-            [12:10] Player1: Всем привет!<br>
-            ... [серверное подключение пока не реализовано]
-        </div>
-        <div style="height:50px; background:#222; margin-top:15px; border-radius:8px; display:flex; align-items:center; padding:15px; color:#666">Введите сообщение...</div>
-    </div>
-
-    <div id="sheet-shop" class="sheet">
-        <button class="sheet-back-btn" onclick="closeSheet()">✕ Выйти</button>
-        <h2>МАГАЗИН ТЕХНОМАНЕТ</h2>
-        <p style="margin-bottom:20px; color:#888">Ваш баланс: <span class="tariff-price" style="font-size:16px">500 ₽</span></p>
-        
-        <div class="time-tariff-card hazard-striped" style="height:70px; border-radius:12px; transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28)">
-            <span class="tariff-title">ПАКЕТ "ТЕХНИК" [1000 ₽ монет]</span> <b><span class="tariff-price">900 ₽</span></b>
-        </div>
-         <div class="time-tariff-card hazard-striped" style="height:70px; border-radius:12px">
-            <span class="tariff-title">ПАКЕТ "ИНЖЕНЕР" [5000 ₽ монет]</span> <b><span class="tariff-price">4100 ₽</span></b>
-        </div>
-    </div>
-
-    <div id="sheet-stream" class="sheet" style="height:60vh; overflow:hidden">
-        <button class="sheet-back-btn" onclick="closeSheet()">✕ Закрыть трансляцию</button>
-        <h2>ТРАНСЛЯЦИЯ КУРСА</h2>
-        <div style="width:100%; height:70%; background:#050505; border-radius:12px; margin-top:10px; border: 2px dashed #333; display:flex; align-items:center; justify-content:center; font-size:12px; color:#555">👀 Вид сверху активен...</div>
+        <button onclick="closeGame()" style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #fff; border: none; padding: 10px; border-radius: 5px; z-index: 1001;">✕ Назад</button>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.setHeaderColor('#000000');
-        tg.setBackgroundColor('#000000');
-
-        if (tg.requestFullscreen) tg.requestFullscreen();
-        if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
-
-        // 1. НАВИГАЦИЯ (Системная кнопка "Назад")
-        function goToGarage() {
-            showScreen('screen-garage');
-            tg.BackButton.show();
+        // Логика переключения экранов
+        function startGame() {
+            document.getElementById('ui-layer').classList.add('hidden');
+            document.getElementById('stream-container').style.display = 'block';
+            // Здесь будет инициализация WebRTC или RTSP стрима
         }
 
-        tg.BackButton.onClick(() => {
-            if (document.getElementById('screen-garage').classList.contains('active')) {
-                showScreen('screen-main');
-                tg.BackButton.hide();
-            } else if (document.getElementById('screen-game').classList.contains('active')) {
-                exitGame();
-            }
-        });
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            closeSheet();
+        function closeGame() {
+            document.getElementById('ui-layer').classList.remove('hidden');
+            document.getElementById('stream-container').style.display = 'none';
         }
 
-        // 2. BOTTOM SHEETS МЕНЕДЖЕР
-        function openSheet(id) {
-            document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
-            document.getElementById(id).classList.add('open');
-        }
-
-        function closeSheet() { 
-            document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); 
-        }
-
-        // 3. ГАРАЖ И ВРЕМЯ
-        let currentPrice = 0;
-        let currentTime = 0;
-
-        function selectVehicle(name, status) {
-            if(status === 'free') {
-                document.getElementById('sheet-time-title').innerText = 'Аренда: ' + name;
-                openSheet('sheet-time');
-            }
-        }
-
-        function startSession(min, price) {
-            currentPrice = price;
-            currentTime = min;
-            tg.showConfirm(`Арендовать заезд на ${min} минут за ${price} ₽?`, (ok) => {
-                if(ok) {
-                    closeSheet();
-                    showScreen('screen-game');
-                    tg.BackButton.show();
-                    tg.showAlert(`Тестовый запуск заезда на ${min} мин. [Графика подготовлена]`);
-                }
-            });
-        }
-
-        function exitGame() {
-            tg.showConfirm("Завершить сессию заезда и выйти?", (ok) => {
-                if(ok) {
-                    showScreen('screen-main');
-                    tg.BackButton.hide();
-                }
-            });
-        }
-
-        // 4. ДЖОЙСТИКИ (Мультитач исправлен)
-        function initJoystick(containerId, stickId, callback) {
-            const container = document.getElementById(containerId);
-            const stick = document.getElementById(stickId);
-            let touchId = null;
-
-            container.addEventListener('touchstart', (e) => {
-                if (touchId !== null) return;
-                const touch = e.changedTouches[0];
-                touchId = touch.identifier;
-                updateStick(touch);
-            }, {passive: false});
-
-            window.addEventListener('touchmove', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === touchId) {
-                        updateStick(e.changedTouches[i]);
-                        e.preventDefault();
-                    }
-                }
-            }, {passive: false});
-
-            window.addEventListener('touchend', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === touchId) {
-                        touchId = null;
-                        stick.style.transform = `translate(0,0)`;
-                        callback(0, 0);
-                    }
-                }
-            });
-
-            function updateStick(touch) {
-                const rect = container.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                let x = touch.clientX - centerX;
-                let y = touch.clientY - centerY;
-                
-                const limit = 50;
-                const dist = Math.sqrt(x*x + y*y);
-                if (dist > limit) {
-                    x *= limit / dist;
-                    y *= limit / dist;
-                }
-                stick.style.transform = `translate(${x}px, ${y}px)`;
-                callback(Math.round(x), Math.round(y));
-            }
-        }
-
-        // Управление Езда / Подъем
-        initJoystick('joy-left', 'stick-left', (x, y) => {
-            // y: (-Вперед / +Назад), x: (-Лево / +Право)
-        });
-        initJoystick('joy-right', 'stick-right', (x, y) => {
-            // y: (-Подъем Стрелы / +Спуск Стрелы)
-        });
-
-        // 5. ДАННЫЕ ЮЗЕРА (ТГ)
-        const user = tg.initDataUnsafe.user;
-        const fname = user?.first_name || "Пилот";
-        const id = user?.id || "N/A";
-        const avatarChar =fname[0].toUpperCase();
-
-        // Заполняем данные на главной
-        document.getElementById('u-name').innerText = fname;
-        document.getElementById('u-avatar').innerText = avatarChar;
-
-        // Заполняем данные в профиле
-        document.getElementById('p-name').innerText = fname;
-        document.getElementById('p-avatar').innerText = avatarChar;
-        document.getElementById('p-id').innerText = id;
-
+        // Пример выбора пакета (монеты вместо рублей)
+        const prices = {
+            "10_min": 100, // монет
+            "15_min": 140, // монет
+            "30_min": 250  // монет
+        };
     </script>
 </body>
-</html>
 </html>
