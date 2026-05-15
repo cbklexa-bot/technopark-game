@@ -7,261 +7,146 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --accent: #FF9F0A; /* Оранжевый */
+            --accent: #FF9F0A;
             --bg: #000000;
             --card: rgba(255, 255, 255, 0.08);
-            --glass: blur(25px);
             --hazard-orange: #FF9F0A;
             --hazard-black: #000000;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             background: var(--bg); color: white; margin: 0; padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             overflow: hidden; touch-action: none; height: 100vh; width: 100vw;
         }
 
-        /* Системные и вспомогательные */
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; position: absolute; }
         .screen.active { display: flex; }
 
-        /* ОТСТУП ОТ СИСТЕМНЫХ КНОПОК ТГ (Увеличен для Алексея и Баланса) */
-        .safe-top-spacer {
-            height: 90px; 
-            width: 100%;
-            flex-shrink: 0;
-        }
+        .safe-top-spacer { height: 90px; flex-shrink: 0; }
 
-        /* CSS-анимация Hazard Stripes */
-        @keyframes hazardSlide {
-            0% { background-position: 0 0; }
-            100% { background-position: 100px 100px; }
-        }
-
+        /* hazard animation */
+        @keyframes hazardSlide { 0% { background-position: 0 0; } 100% { background-position: 100px 100px; } }
         .hazard-striped {
-            background-image: linear-gradient(
-                45deg, 
-                var(--hazard-black) 25%, 
-                var(--hazard-orange) 25%, 
-                var(--hazard-orange) 50%, 
-                var(--hazard-black) 50%, 
-                var(--hazard-black) 75%, 
-                var(--hazard-orange) 75%, 
-                var(--hazard-orange) 100%
-            );
-            background-size: 50px 50px;
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 15px rgba(255, 159, 10, 0.4);
-            animation: hazardSlide 5s linear infinite;
-            transition: transform 0.1s;
+            background-image: linear-gradient(45deg, var(--hazard-black) 25%, var(--hazard-orange) 25%, var(--hazard-orange) 50%, var(--hazard-black) 50%, var(--hazard-black) 75%, var(--hazard-orange) 75%, var(--hazard-orange) 100%);
+            background-size: 50px 50px; border: 2px solid var(--accent); animation: hazardSlide 5s linear infinite;
         }
 
-        /* ==================== ГЛАВНАЯ ==================== */
-        .main-header {
-            padding: 0 20px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        /* Главная */
+        .main-header { padding: 0 20px 15px; display: flex; justify-content: space-between; align-items: center; }
         .user-block { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .avatar { width: 38px; height: 38px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; font-size: 18px;}
-        
-        .balance-block { 
-            background: var(--card); padding: 5px 5px 5px 15px; border-radius: 14px; 
-            display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .deposit-btn { 
-            background: var(--accent); color: black; border: none; width: 28px; height: 28px; 
-            border-radius: 10px; font-weight: bold; font-size: 20px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .avatar { width: 38px; height: 38px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; }
+        .balance-block { background: var(--card); padding: 5px 5px 5px 15px; border-radius: 14px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .deposit-btn { background: var(--accent); color: black; border: none; width: 28px; height: 28px; border-radius: 10px; font-weight: bold; font-size: 20px; }
 
-        .hero-card {
-            margin: 20px; padding: 55px 20px; border-radius: 28px;
-            text-align: center; color: white; position: relative; overflow: hidden;
-        }
-        
-        .hero-card h1 { margin: 0; font-size: 38px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.8);}
-        
-        /* Исправленный текст под кнопкой */
-        .hero-card p { 
-            color: #ffffff; 
-            margin: 10px 0 0; 
-            font-size: 16px; 
-            font-weight: 600;
-            text-shadow: 1px 1px 3px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,1);
-        }
+        .hero-card { margin: 20px; padding: 55px 20px; border-radius: 28px; text-align: center; overflow: hidden; }
+        .hero-card h1 { margin: 0; font-size: 38px; font-weight: 900; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+        .hero-card p { color: #ffffff; margin: 10px 0 0; font-size: 16px; font-weight: 600; text-shadow: 1px 1px 3px #000; }
 
-        .home-menu-grid {
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 5px;
-        }
+        .home-menu-grid { padding: 0 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .menu-tile { background: var(--card); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .menu-tile-full { grid-column: span 2; height: 100px; background-color: #0c0c0d; }
+        .tile-title { font-size: 16px; font-weight: bold; margin-top: 5px; }
 
-        .menu-tile {
-            background: var(--card);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 22px;
-            padding: 20px;
-            display: flex; flex-direction: column; justify-content: space-between;
-            cursor: pointer;
-        }
-        
-        .menu-tile-full {
-            grid-column: span 2;
-            height: 120px;
-            background-color: #0c0c0d;
-            position: relative;
-        }
-        
-        .tile-title { font-size: 16px; font-weight: bold; margin-top: 5px;}
-        .tile-sub { font-size: 11px; opacity: 0.6; }
-
-        /* ==================== ГАРАЖ ==================== */
-        .garage-container { padding: 0 20px; }
-        .garage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .vehicle-card {
-            background: var(--card); border-radius: 20px; padding: 12px;
-            border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
-        }
-        .vehicle-img { height: 60px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; }
-
-        /* ==================== ИГРА ==================== */
-        #screen-game { background: #000; }
-
-        /* КОМПАКТНЫЙ ХУД ПО ЦЕНТРУ */
+        /* ИГРА: HUD и УПРАВЛЕНИЕ */
         .game-hud {
-            position: absolute; top: 15px;
-            left: 50%; transform: translateX(-50%);
-            display: flex; align-items: center; justify-content: center;
-            gap: 20px;
-            z-index: 100;
-            background: rgba(0,0,0,0.4);
-            padding: 8px 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+            position: absolute; top: 10px; /* МАКСИМАЛЬНО ВВЕРХ */
+            left: 0; width: 100%;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; z-index: 100;
         }
-        
-        .timer-display { font-family: monospace; font-size: 26px; color: var(--accent); font-weight: 800; }
-        .hud-btn {
-            background: var(--card); border: 1px solid rgba(255,255,255,0.2); 
-            color: white; padding: 5px 12px; border-radius: 8px; font-weight: 700; font-size: 12px;
-        }
+        .timer-display { font-family: monospace; font-size: 24px; color: var(--accent); font-weight: 800; text-shadow: 0 0 10px rgba(0,0,0,1); }
+        .hud-btn { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; }
         .hud-btn.sos { background: #FF3B30; border: none; }
 
-        /* Видео во весь экран */
-        .video-container {
-            position: absolute; top:0; left:0; width:100%; height:100%; 
-            z-index: 1; background: #000;
-        }
-        .video-container iframe, .video-container video {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-
-        /* Джойстики */
         .joy-wrapper {
-            position: absolute; bottom: 40px; z-index: 10;
-            width: 130px; height: 130px; border-radius: 50%;
+            position: absolute; bottom: 20px; /* НИЖЕ */
+            width: 120px; height: 120px; border-radius: 50%;
             background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px); z-index: 10;
         }
-        #joy-left { left: 40px; }
-        #joy-right { right: 40px; }
-        .joy-stick {
-            position: absolute; top: 50%; left: 50%;
-            width: 60px; height: 60px; margin: -30px 0 0 -30px;
-            background: rgba(255,255,255,0.2); border-radius: 50%;
-        }
+        #joy-left { left: 20px; } /* В УГОЛ */
+        #joy-right { right: 20px; } /* В УГОЛ */
+        .joy-stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; background: rgba(255,255,255,0.3); border-radius: 50%; }
 
-        /* ИСПРАВЛЕНИЕ ГОРИЗОНТАЛЬНОГО РЕЖИМА */
+        .video-container { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; background: #000; }
+        .video-container video, .video-container iframe { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Ландшафт */
         @media (orientation: landscape) {
-            .safe-top-spacer, .main-header, .hero-card, .home-menu-grid, .footer {
-                display: none !important;
-            }
-            .screen:not(#screen-game) { display: none !important; }
-            #screen-game { display: flex !important; }
+            .safe-top-spacer, .main-header, .hero-card, .home-menu-grid, .footer { display: none !important; }
+            #screen-game, #screen-stream-only { display: flex !important; }
         }
 
-        /* BOTTOM SHEETS */
-        .sheet {
-            position: fixed; bottom: -100%; left: 0; width: 100%;
-            background: #111112; border-radius: 25px 25px 0 0;
-            padding: 25px 20px calc(20px + var(--tg-safe-area-inset-bottom));
-            transition: 0.3s ease-out; z-index: 200; border-top: 1px solid rgba(255,255,255,0.1);
-        }
+        /* Sheets */
+        .sheet { position: fixed; bottom: -100%; left: 0; width: 100%; background: #111112; border-radius: 25px 25px 0 0; padding: 25px 20px; transition: 0.3s ease-out; z-index: 200; border-top: 1px solid rgba(255,255,255,0.1); max-height: 80vh; overflow-y: auto; }
         .sheet.open { bottom: 0; }
-        .time-tariff-card {
-            background: var(--card); padding: 18px; border-radius: 18px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px; cursor: pointer;
-        }
-        .tariff-price { color: var(--accent); font-weight: 800; font-size: 18px;}
+        .time-tariff-card { background: var(--card); padding: 18px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        /* Чат */
+        .chat-area { height: 250px; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 10px; overflow-y: auto; margin-bottom: 10px; font-size: 14px; }
+        .chat-input { width: 100%; background: var(--card); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; color: white; }
 
-        /* ПРОФИЛЬ */
-        .profile-container { display: flex; flex-direction: column; align-items: center; }
-        .profile-stat-grid {
-            width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;
-        }
-        .stat-card { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 15px; text-align: center; }
+        .garage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px 0; }
+        .vehicle-card { background: var(--card); border-radius: 20px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
 
     <div id="screen-main" class="screen active">
         <div class="safe-top-spacer"></div>
-        
         <div class="main-header">
             <div class="user-block" onclick="openSheet('sheet-profile')">
                 <div class="avatar" id="u-avatar">?</div>
-                <div style="font-weight: 600;" id="u-name">Загрузка...</div>
+                <div id="u-name">...</div>
             </div>
             <div class="balance-block">
-                <span style="font-weight: bold;"><span id="u-balance">500</span> монет</span>
+                <span><span id="u-balance">500</span> монет</span>
                 <button class="deposit-btn" onclick="openSheet('sheet-shop')">+</button>
             </div>
         </div>
 
-        <div class="hero-card hazard-striped" onclick="goToGarage()">
+        <div class="hero-card hazard-striped" onclick="showScreen('screen-garage')">
             <h1>ИГРАТЬ</h1>
             <p>Начни онлайн-заезд прямо сейчас</p>
         </div>
         
         <div class="home-menu-grid">
-            <div class="menu-tile menu-tile-full" onclick="openSheet('sheet-stream')">
-                <div>
-                    <span class="tile-sub">Прямой эфир</span>
-                    <div class="tile-title">ОНЛАЙН ТРАНСЛЯЦИЯ</div>
-                </div>
-                <div style="font-size: 12px; color:#666">Смотри за игрой других</div>
+            <div class="menu-tile menu-tile-full" onclick="showScreen('screen-stream-only')">
+                <div class="tile-title">🔴 ОНЛАЙН ТРАНСЛЯЦИЯ</div>
+                <div style="font-size: 12px; opacity: 0.5;">Смотри, как играют другие в реальном времени</div>
             </div>
             <div class="menu-tile" onclick="openSheet('sheet-chat')">
-                <div style="font-size: 28px;">💬</div>
+                <div style="font-size: 24px;">💬</div>
                 <div class="tile-title">ОБЩИЙ ЧАТ</div>
             </div>
             <div class="menu-tile" onclick="openSheet('sheet-shop')">
-                <div style="font-size: 28px;">🛒</div>
+                <div style="font-size: 24px;">🛒</div>
                 <div class="tile-title">МАГАЗИН</div>
             </div>
         </div>
-
-        <div class="footer" style="text-align: center; margin-top: auto; padding-bottom: 20px; opacity: 0.3; font-size: 11px;">
-            Технопарк версия 1
-        </div>
+        <div style="text-align:center; opacity:0.3; font-size:10px; margin-top:20px;">Технопарк версия 1</div>
     </div>
 
     <div id="screen-garage" class="screen">
         <div class="safe-top-spacer"></div>
-        <div class="garage-container">
-            <h2 style="margin: 0 0 5px; font-size: 26px; font-weight: 800;">Гараж техники</h2>
+        <div style="padding: 20px;">
+            <h2 style="margin:0;">Гараж</h2>
             <div class="garage-grid">
                 <div class="vehicle-card" onclick="selectVehicle('ПОГРУЗЧИК')">
-                    <div class="vehicle-img"></div>
-                    <span style="font-weight: 600;">ПОГРУЗЧИК</span>
-                    <div style="color: #30D158; font-size: 10px; font-weight: bold;">СВОБОДЕН</div>
+                    <div style="height:60px; background:rgba(255,255,255,0.05); border-radius:10px; margin-bottom:10px;"></div>
+                    <b>ПОГРУЗЧИК</b>
+                    <div style="color:#30D158; font-size:10px;">СВОБОДЕН</div>
+                </div>
+                <div class="vehicle-card" onclick="selectVehicle('САМОСВАЛ')">
+                    <div style="height:60px; background:rgba(255,255,255,0.05); border-radius:10px; margin-bottom:10px;"></div>
+                    <b>САМОСВАЛ</b>
+                    <div style="color:#30D158; font-size:10px;">СВОБОДЕН</div>
                 </div>
             </div>
+            <button onclick="showScreen('screen-main')" style="width:100%; padding:15px; background:var(--card); border:none; color:white; border-radius:15px;">НАЗАД</button>
         </div>
     </div>
 
@@ -272,63 +157,47 @@
             <button class="hud-btn" onclick="tg.showAlert('Смена камеры...')">CAM</button>
         </div>
         <div class="video-container">
-            <div style="color:#333; display:flex; align-items:center; justify-content:center; height:100%">[ВИДЕОПОТОК]</div>
+            <div style="color:#333; display:flex; align-items:center; justify-content:center; height:100%">[ПОТОК ИГРЫ]</div>
         </div>
         <div id="joy-left" class="joy-wrapper"><div class="joy-stick" id="stick-left"></div></div>
         <div id="joy-right" class="joy-wrapper"><div class="joy-stick" id="stick-right"></div></div>
     </div>
 
-    <div id="sheet-time" class="sheet">
-        <h2 id="sheet-time-title">Аренда</h2>
-        <div class="time-tariff-card" onclick="startSession(10, 100)">
-            <span>10 минут заезда</span> <b><span class="tariff-price">100 монет</span></b>
+    <div id="screen-stream-only" class="screen">
+        <button onclick="showScreen('screen-main')" style="position:absolute; top:20px; left:20px; z-index:100; background:rgba(0,0,0,0.6); color:white; border:none; padding:10px 20px; border-radius:10px;">✕ ВЫЙТИ</button>
+        <div class="video-container">
+            <div style="color:#eee; display:flex; align-items:center; justify-content:center; height:100%">[ПРЯМОЙ ЭФИР: ВИД СВЕРХУ]</div>
         </div>
-        <div class="time-tariff-card" onclick="startSession(15, 140)">
-            <span>15 минут заезда</span> <b><span class="tariff-price">140 монет</span></b>
-        </div>
-        <div class="time-tariff-card" onclick="startSession(30, 250)">
-            <span>30 минут заезда</span> <b><span class="tariff-price">250 монет</span></b>
-        </div>
-        <button onclick="closeSheet()" style="width:100%; background:none; border:none; color:#666; margin-top:15px;">ОТМЕНА</button>
     </div>
 
-    <div id="sheet-profile" class="sheet">
-        <div class="profile-container">
-            <div class="avatar" style="width:70px; height:70px; font-size:32px" id="p-avatar">?</div>
-            <h2 id="p-name" style="margin: 15px 0 5px;">Юзер</h2>
-            <div class="profile-stat-grid">
-                <div class="stat-card"> <div style="color:var(--accent); font-weight:800">12</div> <div style="font-size:10px">ЗАЕЗДОВ</div> </div>
-                <div class="stat-card"> <div style="color:var(--accent); font-weight:800">3 ч.</div> <div style="font-size:10px">В ИГРЕ</div> </div>
-            </div>
-            <button class="hazard-striped" style="width:100%; padding:15px; border-radius:12px; margin-top:20px; color:white; font-weight:bold; border:none;" onclick="tg.showAlert('Редактирование скоро...')">ИЗМЕНИТЬ ДАННЫЕ</button>
-            <button onclick="closeSheet()" style="margin-top:15px; background:none; border:none; color:#666">ЗАКРЫТЬ</button>
+    <div id="sheet-chat" class="sheet">
+        <h3>ОБЩИЙ ЧАТ</h3>
+        <div class="chat-area" id="chat-box">
+            <div><b>Система:</b> Добро пожаловать в Технопарк!</div>
+            <div><b>Игрок1:</b> Крутой погрузчик!</div>
         </div>
+        <input type="text" class="chat-input" placeholder="Напишите сообщение...">
+        <button onclick="closeSheet()" style="width:100%; background:none; border:none; color:#666; margin-top:15px;">ЗАКРЫТЬ</button>
+    </div>
+
+    <div id="sheet-time" class="sheet">
+        <h3 id="v-title">Аренда</h3>
+        <div class="time-tariff-card" onclick="startSession(10, 100)"><span>10 минут</span> <b>100 монет</b></div>
+        <div class="time-tariff-card" onclick="startSession(15, 140)"><span>15 минут</span> <b>140 монет</b></div>
+        <div class="time-tariff-card" onclick="startSession(30, 250)"><span>30 минут</span> <b>250 монет</b></div>
+        <button onclick="closeSheet()" style="width:100%; border:none; background:none; color:#666;">ОТМЕНА</button>
     </div>
 
     <div id="sheet-shop" class="sheet">
-        <h2>МАГАЗИН МОНЕТ</h2>
-        <div class="time-tariff-card hazard-striped" onclick="tg.showAlert('Переход к оплате...')">
-            <span style="color:white; font-weight:bold">ПАКЕТ "ТЕХНИК" (100 монет)</span> <b><span style="color:white">100 ₽</span></b>
-        </div>
-        <div class="time-tariff-card hazard-striped" onclick="tg.showAlert('Переход к оплате...')">
-            <span style="color:white; font-weight:bold">ПАКЕТ "МАСТЕР" (500 монет)</span> <b><span style="color:white">450 ₽</span></b>
-        </div>
-        <button onclick="closeSheet()" style="width:100%; background:none; border:none; color:#666; margin-top:15px;">НАЗАД</button>
+        <h3>МАГАЗИН</h3>
+        <div class="time-tariff-card hazard-striped" style="color:white"><span>100 монет</span> <b>100 ₽</b></div>
+        <div class="time-tariff-card hazard-striped" style="color:white"><span>500 монет</span> <b>450 ₽</b></div>
+        <button onclick="closeSheet()" style="width:100%; border:none; background:none; color:#666; margin-top:15px;">НАЗАД</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.setHeaderColor('#000000');
-
-        function goToGarage() { showScreen('screen-garage'); tg.BackButton.show(); }
-        tg.BackButton.onClick(() => {
-            if (document.getElementById('screen-garage').classList.contains('active')) {
-                showScreen('screen-main'); tg.BackButton.hide();
-            } else if (document.getElementById('screen-game').classList.contains('active')) {
-                exitGame();
-            }
-        });
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -340,68 +209,36 @@
         function closeSheet() { document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
 
         function selectVehicle(name) {
-            document.getElementById('sheet-time-title').innerText = name;
+            document.getElementById('v-title').innerText = name;
             openSheet('sheet-time');
         }
 
-        function startSession(min, price) {
-            tg.showConfirm(`Арендовать заезд на ${min} мин за ${price} монет?`, (ok) => {
-                if(ok) { showScreen('screen-game'); }
-            });
+        function startSession(m, p) {
+            tg.showConfirm(`Арендовать заезд за ${p} монет?`, (ok) => { if(ok) showScreen('screen-game'); });
         }
 
         function exitGame() {
-            tg.showConfirm("Завершить заезд?", (ok) => {
-                if(ok) { showScreen('screen-main'); tg.BackButton.hide(); }
-            });
+            tg.showConfirm("Выйти из заезда?", (ok) => { if(ok) showScreen('screen-main'); });
         }
 
-        // Джойстики
-        function initJoystick(containerId, stickId) {
-            const container = document.getElementById(containerId);
-            const stick = document.getElementById(stickId);
-            let touchId = null;
-
-            container.addEventListener('touchstart', (e) => {
-                if (touchId !== null) return;
-                touchId = e.changedTouches[0].identifier;
-                updateJoy(e.changedTouches[0]);
+        // Джойстики (облегченная версия)
+        function initJoy(id, stickId) {
+            const el = document.getElementById(id);
+            const st = document.getElementById(stickId);
+            el.addEventListener('touchmove', (e) => {
+                const rect = el.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left - 60;
+                const y = e.touches[0].clientY - rect.top - 60;
+                st.style.transform = `translate(${Math.max(-40, Math.min(40, x))}px, ${Math.max(-40, Math.min(40, y))}px)`;
             });
-
-            window.addEventListener('touchmove', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === touchId) updateJoy(e.changedTouches[i]);
-                }
-            });
-
-            window.addEventListener('touchend', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === touchId) {
-                        touchId = null; stick.style.transform = `translate(0,0)`;
-                    }
-                }
-            });
-
-            function updateJoy(touch) {
-                const rect = container.getBoundingClientRect();
-                let x = touch.clientX - (rect.left + rect.width / 2);
-                let y = touch.clientY - (rect.top + rect.height / 2);
-                const limit = 40;
-                const dist = Math.sqrt(x*x + y*y);
-                if (dist > limit) { x *= limit / dist; y *= limit / dist; }
-                stick.style.transform = `translate(${x}px, ${y}px)`;
-            }
+            el.addEventListener('touchend', () => { st.style.transform = 'translate(0,0)'; });
         }
-        initJoystick('joy-left', 'stick-left');
-        initJoystick('joy-right', 'stick-right');
+        initJoy('joy-left', 'stick-left');
+        initJoy('joy-right', 'stick-right');
 
-        // Данные пользователя
         const user = tg.initDataUnsafe.user;
-        const name = user?.first_name || "Пилот";
-        document.getElementById('u-name').innerText = name;
-        document.getElementById('p-name').innerText = name;
-        document.getElementById('u-avatar').innerText = name[0];
-        document.getElementById('p-avatar').innerText = name[0];
+        document.getElementById('u-name').innerText = user?.first_name || "Пилот";
+        document.getElementById('u-avatar').innerText = (user?.first_name || "П")[0];
     </script>
 </body>
 </html>
