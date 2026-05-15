@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TehnoPark Control</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -26,9 +27,16 @@
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; position: absolute; }
         .active { display: flex; }
 
+        /* ОТСТУП ОТ СИСТЕМНЫХ КНОПОК ТЕЛЕГРАМА */
+        .safe-top-spacer {
+            height: 70px; /* Жесткий отступ сверху, чтобы уйти из мертвой зоны */
+            width: 100%;
+            flex-shrink: 0;
+        }
+
         /* Верхняя панель (Главная) */
         .main-header {
-            padding: calc(15px + var(--tg-safe-area-inset-top)) 20px 10px;
+            padding: 0 20px 10px;
             display: flex; justify-content: space-between; align-items: center;
         }
         .user-block { display: flex; align-items: center; gap: 10px; }
@@ -41,6 +49,7 @@
         .deposit-btn { 
             background: var(--accent); color: black; border: none; width: 28px; height: 28px; 
             border-radius: 10px; font-weight: bold; font-size: 18px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; padding-bottom: 2px;
         }
 
         /* Карточка ИГРАТЬ */
@@ -48,39 +57,47 @@
             margin: 20px; padding: 45px 20px; border-radius: 28px;
             background: linear-gradient(135deg, #FF9F0A 0%, #FF3B30 100%);
             text-align: center; box-shadow: 0 10px 30px rgba(255, 159, 10, 0.2);
+            cursor: pointer;
         }
         .hero-card h1 { margin: 0; font-size: 32px; letter-spacing: 1px; }
 
         /* Гараж */
-        .garage-container { padding: 10px 20px; }
+        .garage-container { padding: 0 20px; }
         .garage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
         
         .vehicle-card {
             background: var(--card); border-radius: 20px; padding: 12px;
-            border: 1px solid rgba(255,255,255,0.05); position: relative;
+            border: 1px solid rgba(255,255,255,0.05); position: relative; cursor: pointer;
         }
         .vehicle-img { height: 60px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 8px; }
         .v-name { font-size: 14px; font-weight: 600; display: block; margin-bottom: 4px; }
         
-        .status-tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
+        .status-tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: bold; }
         .status-free { background: rgba(48, 209, 88, 0.2); color: var(--status-free); }
         .status-busy { background: rgba(255, 69, 58, 0.2); color: var(--status-busy); }
 
-        /* Игровой интерфейс */
-        .game-top-bar {
-            position: absolute; top: 0; width: 100%;
-            padding: calc(10px + var(--tg-safe-area-inset-top)) 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            z-index: 100; pointer-events: none;
+        /* Игровой интерфейс (Горизонтальный) */
+        .game-ui-center {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
         }
-        .game-top-bar * { pointer-events: auto; }
         
-        .timer-display { font-family: monospace; font-size: 24px; color: var(--accent); text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .sos-btn { background: #FF3B30; border: none; color: white; padding: 8px 16px; border-radius: 10px; font-weight: bold; }
+        .timer-display { font-family: monospace; font-size: 24px; color: var(--accent); font-weight: bold; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+        
+        .game-controls { display: flex; gap: 15px; }
+        .cam-btn { background: var(--card); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 10px; font-weight: bold; backdrop-filter: var(--glass); }
+        .sos-btn { background: #FF3B30; border: none; color: white; padding: 8px 16px; border-radius: 10px; font-weight: bold; box-shadow: 0 0 10px rgba(255,59,48,0.5); }
 
-        /* Джойстики (Новая логика) */
+        /* Джойстики */
         .joy-wrapper {
-            position: absolute; bottom: calc(40px + var(--tg-safe-area-inset-bottom));
+            position: absolute; bottom: 40px;
             width: 130px; height: 130px; border-radius: 50%;
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(5px); touch-action: none;
@@ -94,25 +111,25 @@
         #joy-left { left: 40px; }
         #joy-right { right: 40px; }
 
-        /* Bottom Sheet */
+        /* Bottom Sheet (Выбор времени) */
         .sheet {
             position: fixed; bottom: -100%; left: 0; width: 100%;
             background: #121212; border-radius: 25px 25px 0 0;
             padding: 25px 20px calc(20px + var(--tg-safe-area-inset-bottom));
-            transition: 0.3s ease-out; z-index: 200;
+            transition: 0.3s ease-out; z-index: 200; border-top: 1px solid rgba(255,255,255,0.1);
         }
         .sheet.open { bottom: 0; }
         .time-btn {
             background: var(--card); padding: 18px; border-radius: 16px;
             display: flex; justify-content: space-between; margin-bottom: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
         }
     </style>
 </head>
 <body>
 
     <div id="screen-main" class="screen active">
-        <div class="main-header">
+        <div class="safe-top-spacer"></div> <div class="main-header">
             <div class="user-block">
                 <div class="avatar" id="u-avatar">?</div>
                 <div style="font-weight: 600;" id="u-name">Загрузка...</div>
@@ -129,13 +146,13 @@
         </div>
         
         <div style="text-align: center; margin-top: auto; padding-bottom: 30px; opacity: 0.3; font-size: 12px;">
-            TEHNOPARK CONTROL v1.5
+            ТЕХНОПАРК v1.5
         </div>
     </div>
 
     <div id="screen-garage" class="screen">
-        <div class="garage-container">
-            <h2 style="margin: 20px 0 5px; font-size: 26px;">Гараж</h2>
+        <div class="safe-top-spacer"></div> <div class="garage-container">
+            <h2 style="margin: 0 0 5px; font-size: 26px;">Гараж</h2>
             <p style="color: #888; margin: 0 0 20px; font-size: 14px;">Выбери доступную технику</p>
             
             <div class="garage-grid">
@@ -144,7 +161,7 @@
                     <span class="v-name">ПОГРУЗЧИК</span>
                     <span class="status-tag status-free">Свободен</span>
                 </div>
-                <div class="vehicle-card" style="opacity: 0.6;" onclick="tg.showConfirm('Техника занята. Уведомить о завершении?')">
+                <div class="vehicle-card" style="opacity: 0.6;" onclick="tg.showConfirm('САМОСВАЛ сейчас занят другим игроком. Уведомить, когда освободится?')">
                     <div class="vehicle-img"></div>
                     <span class="v-name">САМОСВАЛ</span>
                     <span class="status-tag status-busy">Занят (3 мин)</span>
@@ -154,12 +171,16 @@
     </div>
 
     <div id="screen-game" class="screen">
-        <div class="game-top-bar">
+        
+        <div class="game-ui-center">
             <div class="timer-display" id="timer">10:00</div>
-            <button class="sos-btn" onclick="exitGame()">SOS</button>
+            <div class="game-controls">
+                <button class="cam-btn" onclick="tg.showAlert('Переключение на камеру 2')">CAM 📹</button>
+                <button class="sos-btn" onclick="exitGame()">SOS</button>
+            </div>
         </div>
 
-        <div id="video-bg" style="width:100%; height:100%; background:#050505;"></div>
+        <div id="video-bg" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#050505; z-index: -1;"></div>
 
         <div id="joy-left" class="joy-wrapper">
             <div class="joy-stick" id="stick-left"></div>
@@ -177,18 +198,19 @@
         <div class="time-btn" onclick="startSession(15)">
             <span>15 минут заезда</span> <b>140 ₽</b>
         </div>
-        <button onclick="closeSheet()" style="width:100%; background:none; border:none; color:#666; margin-top:10px;">ОТМЕНА</button>
+        <button onclick="closeSheet()" style="width:100%; background:none; border:none; color:#666; margin-top:10px; padding: 10px;">ОТМЕНА</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
 
-        // Попытка войти в Fullscreen для скрытия статус-бара
         if (tg.requestFullscreen) tg.requestFullscreen();
+        if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
 
-        // 1. НАВИГАЦИЯ (Используем BackButton Telegram)
+        // Навигация
         function goToGarage() {
             showScreen('screen-garage');
             tg.BackButton.show();
@@ -224,7 +246,7 @@
         }
 
         function exitGame() {
-            tg.showConfirm("Завершить игру?", (ok) => {
+            tg.showConfirm("Завершить текущий заезд?", (ok) => {
                 if(ok) {
                     showScreen('screen-main');
                     tg.BackButton.hide();
@@ -232,7 +254,7 @@
             });
         }
 
-        // 2. УМНЫЕ ДЖОЙСТИКИ (Мультитач исправлен)
+        // Логика джойстиков (Мультитач)
         function initJoystick(containerId, stickId, callback) {
             const container = document.getElementById(containerId);
             const stick = document.getElementById(stickId);
