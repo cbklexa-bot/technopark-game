@@ -20,6 +20,7 @@
             background: var(--bg); color: white; margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             overflow: hidden; touch-action: none; height: 100vh; width: 100vw;
+            overscroll-behavior: none; /* Жестко блокируем отскок браузера */
         }
 
         /* Строгое скрытие неактивных экранов */
@@ -49,7 +50,9 @@
         .menu-tile { background: var(--card); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;}
         .menu-tile-full { grid-column: span 2; height: 100px; background-color: #0c0c0d; }
 
-        /* ИГРА: HUD */
+        /* ИГРА: Защита от скролла и HUD */
+        #screen-game, #screen-stream { touch-action: none; overscroll-behavior: none; }
+
         .game-hud {
             position: absolute; top: 10px; left: 0; width: 100%;
             display: flex; align-items: center; justify-content: center; gap: 15px;
@@ -155,7 +158,8 @@
                     </div>
                 </div>
 
-                <div class="vehicle-card" onclick="selectVehicle('САМОСВАЛ')"> <div class="v-image-placeholder">[МЕСТО ДЛЯ ФОТО САМОСВАЛА]</div>
+                <div class="vehicle-card" onclick="selectVehicle('САМОСВАЛ')">
+                    <div class="v-image-placeholder">[МЕСТО ДЛЯ ФОТО САМОСВАЛА]</div>
                     <div class="v-info">
                         <div class="v-title">САМОСВАЛ</div>
                         <div class="v-desc">Тяжелый грузовик для перевозки материалов по площадке.</div>
@@ -220,15 +224,30 @@
     <div id="sheet-shop" class="sheet">
         <h3 style="margin-top: 0;">МАГАЗИН</h3>
         <div class="time-tariff-card hazard-striped" style="color:white"><span>100 монет</span> <b style="font-size: 18px;">100 ₽</b></div>
-        <div class="time-tariff-card hazard-striped" style="color:white"><span>150 монет</span> <b style="font-size: 18px;">150 ₽</b></div>
-        <div class="time-tariff-card hazard-striped" style="color:white"><span>250 монет</span> <b style="font-size: 18px;">250 ₽</b></div>
-        <div class="time-tariff-card hazard-striped" style="color:white"><span>500 монет</span> <b style="font-size: 18px;">450 ₽</b></div>
+        <div class="time-tariff-card hazard-striped" style="color:white"><span>150 монет</span> <b style="font-size: 18px;">140 ₽</b></div>
+        <div class="time-tariff-card hazard-striped" style="color:white"><span>250 монет</span> <b style="font-size: 18px;">220 ₽</b></div>
+        <div class="time-tariff-card hazard-striped" style="color:white"><span>500 монет</span> <b style="font-size: 18px;">400 ₽</b></div>
         <button onclick="closeSheet()" style="width:100%; border:none; background:none; color:#666; margin-top: 10px;">НАЗАД</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
+        // ЖЕСТКО ЗАПРЕЩАЕМ СВАЙПЫ ДЛЯ ЗАКРЫТИЯ (API Telegram)
+        if (tg.disableVerticalSwipes) {
+            tg.disableVerticalSwipes();
+        }
+
+        // ДОПОЛНИТЕЛЬНАЯ БЛОКИРОВКА СКРОЛЛА ДЛЯ ИГРОВЫХ ЭКРАНОВ
+        document.getElementById('screen-game').addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        document.getElementById('screen-stream').addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
         let timerInterval;
 
         // --- ЛОГИКА ЭКРАНОВ ---
@@ -319,19 +338,21 @@
             let activeTouchId = null;
 
             container.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Защита от скролла при касании
                 if (activeTouchId !== null) return;
                 const touch = e.changedTouches[0];
                 activeTouchId = touch.identifier;
                 moveStick(touch);
-            });
+            }, { passive: false });
 
             window.addEventListener('touchmove', (e) => {
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     if (e.changedTouches[i].identifier === activeTouchId) {
+                        e.preventDefault(); // Защита от скролла при движении
                         moveStick(e.changedTouches[i]);
                     }
                 }
-            });
+            }, { passive: false });
 
             window.addEventListener('touchend', (e) => {
                 for (let i = 0; i < e.changedTouches.length; i++) {
