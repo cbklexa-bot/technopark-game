@@ -6,7 +6,7 @@
     <title>TehnoPark Remote Control</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <script type="module" src="https://stale-yaks-visit.loca.lt/video-rtc.js"></script>
+    <script id="go2rtc-script" type="module"></script>
 
     <style>
         :root {
@@ -23,10 +23,9 @@
             background: var(--bg); color: white; margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             overflow: hidden; touch-action: none; height: 100vh; width: 100vw;
-            overscroll-behavior: none; /* Жестко блокируем отскок браузера */
+            overscroll-behavior: none;
         }
 
-        /* Строгое скрытие неактивных экранов */
         .screen { display: none !important; height: 100vh; width: 100vw; flex-direction: column; position: absolute; top:0; left:0; }
         .screen.active { display: flex !important; }
 
@@ -53,7 +52,6 @@
         .menu-tile { background: var(--card); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;}
         .menu-tile-full { grid-column: span 2; height: 100px; background-color: #0c0c0d; }
 
-        /* ИГРА: Защита от скролла и HUD */
         #screen-game, #screen-stream { touch-action: none; overscroll-behavior: none; background: #000; }
 
         .game-hud {
@@ -64,6 +62,15 @@
         .timer-display { font-family: monospace; font-size: 26px; color: var(--accent); font-weight: 800; text-shadow: 0 0 10px #000; }
         .hud-btn { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; }
         .hud-btn.sos { background: #FF3B30; border: none; }
+
+        .stream-hud {
+            position: absolute; top: 15px; left: 15px; z-index: 100;
+            background: rgba(255, 59, 48, 0.8); padding: 6px 12px; border-radius: 8px;
+            font-size: 12px; font-weight: bold; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .stream-dot { width: 8px; height: 8px; background: white; border-radius: 50%; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
 
         /* ДЖОЙСТИКИ */
         .joy-wrapper {
@@ -77,7 +84,6 @@
         .joy-stick { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; margin: -30px 0 0 -30px; background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: none; }
 
         .video-container { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; background: #000; }
-        /* Адаптация тега video-rtc на весь экран */
         .video-container video-rtc, .video-container video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         /* Sheets (Шторки) */
@@ -88,22 +94,18 @@
             border-top: 1px solid rgba(255,255,255,0.1); max-height: 85vh; overflow-y: auto;
         }
         .sheet.open { bottom: 0; }
-
-        /* ЖЕСТКОЕ ПРАВИЛО: Прятать все шторки, если мы в режиме игры/стрима */
         body.is-playing .sheet { display: none !important; }
 
-        /* Гараж: Карточки техники */
+        /* Гараж */
         .garage-list { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; padding-bottom: 30px;}
-        .vehicle-card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .vehicle-card { background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
         .v-image-placeholder { height: 140px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; }
         .v-info { padding: 15px; display: flex; flex-direction: column; gap: 5px; }
         .v-title { font-size: 18px; font-weight: bold; margin: 0; }
         .v-desc { font-size: 13px; color: #aaa; margin: 0; line-height: 1.4; }
         .v-status { font-size: 12px; font-weight: bold; margin-top: 5px; }
         .status-free { color: #30D158; }
-        .status-busy { color: #FF3B30; }
 
-        /* Чат и прочее */
         .chat-container { display: flex; flex-direction: column; height: 300px; }
         .chat-messages { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 10px; font-size: 14px; }
         .chat-input-row { display: flex; gap: 10px; }
@@ -152,7 +154,6 @@
         <div style="padding: 0 20px; overflow-y: auto; height: 100%;">
             <h2 style="margin: 10px 0;">Выбор техники</h2>
             <div class="garage-list">
-                
                 <div class="vehicle-card" onclick="selectVehicle('ПОГРУЗЧИК')">
                     <div class="v-image-placeholder">[МЕСТО ДЛЯ ФОТО ПОГРУЗЧИКА]</div>
                     <div class="v-info">
@@ -161,7 +162,6 @@
                         <div class="v-status status-free">● СВОБОДЕН</div>
                     </div>
                 </div>
-
                 <div class="vehicle-card" onclick="selectVehicle('САМОСВАЛ')">
                     <div class="v-image-placeholder">[МЕСТО ДЛЯ ФОТО САМОСВАЛА]</div>
                     <div class="v-info">
@@ -170,7 +170,6 @@
                         <div class="v-status status-free">● СВОБОДЕН</div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -179,21 +178,24 @@
         <div class="game-hud">
             <button class="hud-btn sos" onclick="exitGame()">SOS</button>
             <div class="timer-display" id="timer-val">10:00</div>
-            <button class="hud-btn" onclick="tg.showAlert('Смена камеры...')">CAM</button>
+            <button class="hud-btn" onclick="switchCamera()">CAM</button>
         </div>
         <div class="video-container">
-            <video-rtc src="https://stale-yaks-visit.loca.lt/api/ws?src=technopark" autoplay muted playsinline></video-rtc>
+            <video-rtc id="game-player" autoplay muted playsinline></video-rtc>
         </div>
         <div id="joy-left" class="joy-wrapper"><div class="joy-stick" id="stick-left"></div></div>
         <div id="joy-right" class="joy-wrapper"><div class="joy-stick" id="stick-right"></div></div>
     </div>
 
     <div id="screen-stream" class="screen">
+        <div class="stream-hud">
+            <div class="stream-dot"></div>
+            <span>LIVE</span>
+        </div>
         <div class="video-container">
-            <video-rtc src="https://stale-yaks-visit.loca.lt/api/ws?src=technopark" autoplay muted playsinline></video-rtc>
+            <video-rtc id="full-stream-player" autoplay muted playsinline></video-rtc>
         </div>
     </div>
-
 
     <div id="sheet-profile" class="sheet">
         <div style="text-align: center; margin-bottom: 25px;">
@@ -239,26 +241,25 @@
     </div>
 
     <script>
+        // ==================== КОНФИГУРАЦИЯ СТРИМА ====================
+        // Твоя новая активная ссылка из терминала (уже вшита)
+        const TUNNEL_URL = "https://3cf77b8ac07cd4.lhr.life";
+        
+        // Автоматически цепляем js-библиотеку медиасервера
+        document.getElementById('go2rtc-script').setAttribute('src', `${TUNNEL_URL}/video-rtc.js`);
+
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // ЖЕСТКО ЗАПРЕЩАЕМ СВАЙПЫ ДЛЯ ЗАКРЫТИЯ (API Telegram)
-        if (tg.disableVerticalSwipes) {
-            tg.disableVerticalSwipes();
-        }
+        if (tg.disableVerticalSwipes) { tg.disableVerticalSwipes(); }
 
-        // ДОПОЛНИТЕЛЬНАЯ БЛОКИРОВКА СКРОЛЛА ДЛЯ ИГРОВЫХ ЭКРАНОВ
-        document.getElementById('screen-game').addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-        
-        document.getElementById('screen-stream').addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
+        document.getElementById('screen-game').addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+        document.getElementById('screen-stream').addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
 
         let timerInterval;
+        let currentCamera = "technopark"; 
 
-        // --- ЛОГИКА ЭКРАНОВ ---
+        // --- УПРАВЛЕНИЕ ЭКРАНАМИ ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -276,25 +277,43 @@
 
         tg.BackButton.onClick(() => {
             if (document.getElementById('screen-game').classList.contains('active')) {
-                // Если мы в игре — выходим через подтверждение
                 exitGame();
             } else if (document.getElementById('screen-stream').classList.contains('active')) {
-                // Если мы просто смотрим трансляцию на весь экран — выходим сразу
-                showScreen('screen-main');
-            } else if (document.getElementById('screen-garage').classList.contains('active')) {
+                document.getElementById('full-stream-player').removeAttribute('src');
                 showScreen('screen-main');
             } else {
                 showScreen('screen-main');
             }
         });
 
-        function startStreamMode() { showScreen('screen-stream'); }
+        // Режим онлайн-трансляции
+        function startStreamMode() {
+            const streamPlayer = document.getElementById('full-stream-player');
+            // Запускаем верхнюю главную камеру для пассивного просмотра арены ТехноПарка
+            streamPlayer.setAttribute('src', `${TUNNEL_URL}/api/ws?src=technopark`);
+            showScreen('screen-stream');
+        }
 
-        // --- ЛОГИКА ШТОРОК ---
+        // --- ЛОГИКА ДИНАМИЧЕСКОЙ СМЕНЫ КАМЕР (Кнопка CAM) ---
+        function switchCamera() {
+            const gamePlayer = document.getElementById('game-player');
+            if (!gamePlayer) return;
+
+            if (currentCamera === "technopark") {
+                currentCamera = "cabin";
+                tg.showAlert("Подключение к камере кабины... (Поток готовится к запуску)");
+            } else {
+                currentCamera = "technopark";
+                tg.showAlert("Возврат на общую верхнюю камеру арены");
+            }
+            
+            // На лету переключаем стрим в плеере
+            gamePlayer.setAttribute('src', `${TUNNEL_URL}/api/ws?src=${currentCamera}`);
+        }
+
         function openSheet(id) { document.getElementById(id).classList.add('open'); }
         function closeSheet() { document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open')); }
 
-        // --- ЛОГИКА ИГРЫ И ТАЙМЕРА ---
         function selectVehicle(name) {
             document.getElementById('t-title').innerText = name;
             openSheet('sheet-time');
@@ -307,6 +326,10 @@
         }
 
         function startTimer(min) {
+            currentCamera = "technopark"; // При старте заезда всегда вид сверху арены
+            const gamePlayer = document.getElementById('game-player');
+            gamePlayer.setAttribute('src', `${TUNNEL_URL}/api/ws?src=technopark`);
+
             showScreen('screen-game');
             let seconds = min * 60;
             updateTimerDisplay(seconds);
@@ -328,12 +351,12 @@
             tg.showConfirm("Выйти в меню?", (ok) => {
                 if(ok) {
                     clearInterval(timerInterval);
+                    document.getElementById('game-player').removeAttribute('src');
                     showScreen('screen-main');
                 }
             });
         }
 
-        // --- ЧАТ ---
         function sendMsg() {
             const i = document.getElementById('c-input');
             if (!i.value.trim()) return;
@@ -343,14 +366,14 @@
             i.value = '';
         }
 
-        // --- МУЛЬТИТАЧ ДЖОЙСТИКИ ---
+        // --- ДЖОЙСТИКИ ---
         function initJoystick(containerId, stickId) {
             const container = document.getElementById(containerId);
             const stick = document.getElementById(stickId);
             let activeTouchId = null;
 
             container.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Защита от скролла при касании
+                e.preventDefault();
                 if (activeTouchId !== null) return;
                 const touch = e.changedTouches[0];
                 activeTouchId = touch.identifier;
@@ -360,7 +383,7 @@
             window.addEventListener('touchmove', (e) => {
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     if (e.changedTouches[i].identifier === activeTouchId) {
-                        e.preventDefault(); // Защита от скролла при движении
+                        e.preventDefault();
                         moveStick(e.changedTouches[i]);
                     }
                 }
@@ -388,17 +411,13 @@
         initJoystick('joy-left', 'stick-left');
         initJoystick('joy-right', 'stick-right');
 
-        // --- ДАННЫЕ ЮЗЕРА ТГ ---
         const user = tg.initDataUnsafe.user;
         const uName = user?.first_name || "Пилот";
         const uId = user?.id || "N/A";
         const uAvatar = (user?.first_name || "П")[0];
 
-        // Заполнение на главной
         document.getElementById('u-name').innerText = uName;
         document.getElementById('u-avatar').innerText = uAvatar;
-        
-        // Заполнение в профиле
         document.getElementById('p-name').innerText = uName;
         document.getElementById('p-avatar').innerText = uAvatar;
         document.getElementById('p-id').innerText = uId;
