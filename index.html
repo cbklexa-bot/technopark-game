@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TehnoPark Remote Control</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script type="module" src="https://stale-yaks-visit.loca.lt/video-rtc.js"></script>
+
     <style>
         :root {
             --accent: #FF9F0A;
@@ -51,7 +54,7 @@
         .menu-tile-full { grid-column: span 2; height: 100px; background-color: #0c0c0d; }
 
         /* ИГРА: Защита от скролла и HUD */
-        #screen-game, #screen-stream { touch-action: none; overscroll-behavior: none; }
+        #screen-game, #screen-stream { touch-action: none; overscroll-behavior: none; background: #000; }
 
         .game-hud {
             position: absolute; top: 10px; left: 0; width: 100%;
@@ -74,7 +77,8 @@
         .joy-stick { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; margin: -30px 0 0 -30px; background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: none; }
 
         .video-container { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; background: #000; }
-        .video-container video { width: 100%; height: 100%; object-fit: cover; }
+        /* Адаптация тега video-rtc на весь экран */
+        .video-container video-rtc, .video-container video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         /* Sheets (Шторки) */
         .sheet {
@@ -177,13 +181,17 @@
             <div class="timer-display" id="timer-val">10:00</div>
             <button class="hud-btn" onclick="tg.showAlert('Смена камеры...')">CAM</button>
         </div>
-        <div class="video-container"><video autoplay playsinline muted loop></video></div>
+        <div class="video-container">
+            <video-rtc src="https://stale-yaks-visit.loca.lt/api/ws?src=technopark" autoplay muted playsinline></video-rtc>
+        </div>
         <div id="joy-left" class="joy-wrapper"><div class="joy-stick" id="stick-left"></div></div>
         <div id="joy-right" class="joy-wrapper"><div class="joy-stick" id="stick-right"></div></div>
     </div>
 
     <div id="screen-stream" class="screen">
-        <div class="video-container"><video autoplay playsinline muted loop></video></div>
+        <div class="video-container">
+            <video-rtc src="https://stale-yaks-visit.loca.lt/api/ws?src=technopark" autoplay muted playsinline></video-rtc>
+        </div>
     </div>
 
 
@@ -267,8 +275,12 @@
         }
 
         tg.BackButton.onClick(() => {
-            if (document.body.classList.contains('is-playing')) {
+            if (document.getElementById('screen-game').classList.contains('active')) {
+                // Если мы в игре — выходим через подтверждение
                 exitGame();
+            } else if (document.getElementById('screen-stream').classList.contains('active')) {
+                // Если мы просто смотрим трансляцию на весь экран — выходим сразу
+                showScreen('screen-main');
             } else if (document.getElementById('screen-garage').classList.contains('active')) {
                 showScreen('screen-main');
             } else {
